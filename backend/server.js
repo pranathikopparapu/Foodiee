@@ -6,19 +6,30 @@ const connectDB = require("./config/db");
 dotenv.config();
 
 const app = express();
-app.use(cors());
+
+/* ✅ CORS FIX FOR DEPLOYED FRONTEND */
+app.use(
+  cors({
+    origin: [
+      "http://localhost:3000",
+      "https://foodiee-liard.vercel.app/" // 🔁 replace with your actual frontend URL
+    ],
+    credentials: true,
+  })
+);
+
 app.use(express.json());
 
-// ✅ ROUTES
+/* ✅ ROUTES */
 app.use("/api/users", require("./routes/userRoutes"));
 app.use("/api/foods", require("./routes/foodRoutes"));
 app.use("/api/orders", require("./routes/orderRoutes"));
 app.use("/api/test", require("./routes/testMail"));
 
-// ✅ PORT (RENDER REQUIRED)
+/* ✅ PORT (RENDER REQUIRED) */
 const PORT = process.env.PORT || 5000;
 
-// ✅ CONNECT DB SAFELY, THEN START SERVER
+/* ✅ CONNECT DB → START SERVER */
 connectDB()
   .then(() => {
     console.log("MongoDB connected");
