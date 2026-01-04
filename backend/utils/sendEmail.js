@@ -1,4 +1,7 @@
 const nodemailer = require("nodemailer");
+console.log("EMAIL_USER:", process.env.EMAIL_USER);
+console.log("EMAIL_PASS EXISTS:", !!process.env.EMAIL_PASS);
+
 
 const transporter = nodemailer.createTransport({
   service: "gmail",
@@ -8,9 +11,18 @@ const transporter = nodemailer.createTransport({
   },
 });
 
+// ✅ Verify transporter ONCE (important for Render)
+transporter.verify((error, success) => {
+  if (error) {
+    console.error("❌ Mail transporter error:", error.message);
+  } else {
+    console.log("✅ Mail transporter ready");
+  }
+});
+
 const sendEmail = async (to, subject, text) => {
   try {
-    const info = await transporter.sendMail({
+    await transporter.sendMail({
       from: `"Foodiee 🍔" <${process.env.EMAIL_USER}>`,
       to,
       subject,
@@ -19,7 +31,7 @@ const sendEmail = async (to, subject, text) => {
 
     console.log("✅ Email sent to:", to);
   } catch (err) {
-    console.error("❌ Email error:", err.message);
+    console.error("❌ Email send failed:", err.message);
   }
 };
 
