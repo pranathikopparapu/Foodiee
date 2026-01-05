@@ -3,13 +3,17 @@ const router = express.Router();
 const sendEmail = require("../utils/sendEmail");
 
 router.get("/test-mail", async (req, res) => {
-  await sendEmail(
-    "yourgmail@gmail.com",
-    "Foodiee Test Mail 🚀",
-    "Mail system working correctly!"
-  );
-
-  res.json("Mail sent");
+  try {
+    await sendEmail(
+      "2200031156cseh@gmail.com",
+      "Test Email 🚀",
+      "Brevo HTTP API is working successfully!"
+    );
+    res.json("Mail sent");
+  } catch (err) {
+    console.error(err);
+    res.status(500).json("Mail failed");
+  }
 });
 
-module.exports = router;
+module.exports = router;   // ✅ THIS IS CRITICAL

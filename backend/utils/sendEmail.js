@@ -1,38 +1,21 @@
-const nodemailer = require("nodemailer");
-console.log("EMAIL_USER:", process.env.EMAIL_USER);
-console.log("EMAIL_PASS EXISTS:", !!process.env.EMAIL_PASS);
+const SibApiV3Sdk = require("sib-api-v3-sdk");
 
+const client = SibApiV3Sdk.ApiClient.instance;
+const apiKey = client.authentications["api-key"];
+apiKey.apiKey = process.env.BREVO_API_KEY;
 
-const transporter = nodemailer.createTransport({
-  service: "gmail",
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-});
-
-// ✅ Verify transporter ONCE (important for Render)
-transporter.verify((error, success) => {
-  if (error) {
-    console.error("❌ Mail transporter error:", error.message);
-  } else {
-    console.log("✅ Mail transporter ready");
-  }
-});
+const tranEmailApi = new SibApiV3Sdk.TransactionalEmailsApi();
 
 const sendEmail = async (to, subject, text) => {
-  try {
-    await transporter.sendMail({
-      from: `"Foodiee 🍔" <${process.env.EMAIL_USER}>`,
-      to,
-      subject,
-      text,
-    });
-
-    console.log("✅ Email sent to:", to);
-  } catch (err) {
-    console.error("❌ Email send failed:", err.message);
-  }
+  await tranEmailApi.sendTransacEmail({
+    sender: {
+      email: process.env.BREVO_SENDER_EMAIL,
+      name: "Foodiee 🍔",
+    },
+    to: [{ email: to }],
+    subject,
+    textContent: text,
+  });
 };
 
 module.exports = sendEmail;
