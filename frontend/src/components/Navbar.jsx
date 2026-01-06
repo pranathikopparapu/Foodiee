@@ -1,6 +1,7 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useContext, useState, useEffect, useRef } from "react";
 import { CartContext } from "../context/CartContext";
+import { WishlistContext } from "../context/WishlistContext";
 
 export default function Navbar() {
   const token = localStorage.getItem("token");
@@ -9,6 +10,8 @@ export default function Navbar() {
 
   const navigate = useNavigate();
   const { cart, toastMsg } = useContext(CartContext);
+const { wishlist } = useContext(WishlistContext);
+
 
   const [showMenu, setShowMenu] = useState(false);
   const menuRef = useRef(null);
@@ -16,9 +19,10 @@ export default function Navbar() {
   const firstLetter = name ? name.trim().charAt(0).toUpperCase() : "?";
 
   const logout = () => {
-    localStorage.clear();
-    navigate("/login");
-  };
+  localStorage.clear();
+  window.location.href = "/login";
+};
+
 
   /* CLOSE DROPDOWN WHEN CLICKING OUTSIDE */
   useEffect(() => {
@@ -84,7 +88,15 @@ export default function Navbar() {
             {/* ================= USER NAV ================= */}
             {role === "user" && (
               <>
-                <Link to="/wishlist" className="text-xl">🤍</Link>
+                <Link to="/wishlist" className="relative text-xl">
+  ❤️
+  {wishlist.length > 0 && (
+    <span className="absolute -top-2 -right-2 bg-white text-red-500 text-xs px-1 rounded-full">
+      {wishlist.length}
+    </span>
+  )}
+</Link>
+
 
                 <Link to="/cart" className="relative text-xl">
                   🛒

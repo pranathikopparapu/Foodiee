@@ -26,33 +26,57 @@ router.post("/create", auth, async (req, res) => {
   try {
     const user = await User.findById(req.userId);
 
+    /* ✅ CLEAN PRODUCTS */
+    const cleanProducts = (req.body.products || []).filter(
+      (p) => p.foodId && p.quantity > 0
+    );
+
+    if (!cleanProducts.length) {
+      return res.status(400).json("Cart is empty");
+    }
+
+    /* ✅ VALIDATE ADDRESS */
+    const address = req.body.address;
+    if (
+      !address ||
+      !address.mobile ||
+      !address.flat ||
+      !address.pincode
+    ) {
+      return res.status(400).json("Invalid address");
+    }
+
     const order = await Order.create({
       userId: user._id,
       userEmail: user.email,
       userName: user.name,
-      products: req.body.products, // must include foodId
-      address: req.body.address,
+      products: cleanProducts,
+      address,
       paymentMethod: req.body.paymentMethod,
       totalAmount: req.body.totalAmount,
       status: "Order Placed",
     });
 
-    /* SAVE ADDRESS */
+    /* ✅ SAVE ADDRESS SAFELY */
     const exists = user.savedAddresses.find(
-      a =>
-        a.mobile === req.body.address.mobile &&
-        a.flat === req.body.address.flat &&
-        a.pincode === req.body.address.pincode
+      (a) =>
+        a.mobile === address.mobile &&
+        a.flat === address.flat &&
+        a.pincode === address.pincode
     );
+
     if (!exists) {
-      user.savedAddresses.push(req.body.address);
-      await user.save();
+      user.savedAddresses.push(address);
     }
+
+    /* ✅ CLEAR CART AFTER ORDER */
+    user.cart = [];
+    await user.save();
 
     /* RESPOND FAST */
     res.json(order);
 
-    /* ================= USER EMAIL ================= */
+    /* ================= EMAILS (UNCHANGED) ================= */
     sendEmail(
       user.email,
       "Thanks for ordering with Foodiee 🍔",
@@ -62,7 +86,7 @@ Hi ${user.name} 👋,
 Thank you for ordering from Foodiee! 🎉
 
 🧾 Order Summary:
-${req.body.products
+${cleanProducts
   .map(
     (p, i) =>
       `${i + 1}. ${p.name} x ${p.quantity} = ₹${p.price * p.quantity}`
@@ -77,29 +101,27 @@ ${req.body.products
 ⭐ After delivery, please rate your food:
 Profile → My Orders → Write Review
 
-Your feedback helps us improve 
 – Team Foodiee 🍔
 `
-    ).catch(err => console.log("User mail error:", err.message));
+    ).catch(() => {});
 
-    /* ================= ADMIN EMAIL ================= */
     sendEmail(
-      process.env.ADMIN_EMAIL,
+      process.env.BREVO_SENDER_EMAIL,
       "📦 New Order Received – Foodiee",
       `
 🚨 NEW ORDER RECEIVED 🚨
 
 👤 Customer: ${user.name}
 📧 Email: ${user.email}
-📞 Mobile: ${req.body.address.mobile}
+📞 Mobile: ${address.mobile}
 
 🏠 Address:
-${req.body.address.flat},
-${req.body.address.street},
-${req.body.address.pincode}
+${address.flat},
+${address.street},
+${address.pincode}
 
 🧾 Items:
-${req.body.products
+${cleanProducts
   .map(
     (p, i) =>
       `${i + 1}. ${p.name} x ${p.quantity} = ₹${p.price * p.quantity}`
@@ -111,10 +133,9 @@ ${req.body.products
 
 📅 Time: ${new Date().toLocaleString()}
 `
-    ).catch(err => console.log("Admin mail error:", err.message));
-
+    ).catch(() => {});
   } catch (err) {
-    console.error(err);
+    console.error("ORDER CREATE ERROR:", err);
     res.status(500).json("Order failed");
   }
 });
@@ -126,34 +147,34 @@ router.get("/my-orders", auth, async (req, res) => {
       .sort({ createdAt: -1 });
 
     const now = Date.now();
-for (const order of orders) {
-  if (
-    order.status === "Order Placed" &&
-    !order.deliveryMailSent &&
-    now - new Date(order.createdAt).getTime() >= 5 * 60 * 1000
-  ) {
-    order.status = "Delivered";
-    order.deliveryMailSent = true;
-    await order.save();
 
-    /* ⭐ DELIVERY + RATING MAIL */
-    sendEmail(
-      order.userEmail,
-      "Your order is delivered ⭐ Rate your food",
-      `
+    for (const order of orders) {
+      if (
+        order.status === "Order Placed" &&
+        !order.deliveryMailSent &&
+        now - new Date(order.createdAt).getTime() >= 5 * 60 * 1000
+      ) {
+        order.status = "Delivered";
+        order.deliveryMailSent = true;
+        await order.save();
+
+        /* ⭐ DELIVERY + RATING MAIL (USER ONLY) */
+        sendEmail(
+          order.userEmail,
+          "Your order is delivered ⭐ Rate your food",
+          `
 Hi ${order.userName},
 
 Your order has been delivered successfully 🍽️
 
-We’d love your feedback!
-Go to:
+Please rate & review:
 Profile → My Orders → Write Review ⭐
 
-Thanks for choosing Foodiee 💛
+– Team Foodiee 🍔
 `
-    ).catch(() => {});
-  }
-}
+        ).catch(() => {});
+      }
+    }
 
     res.json(orders);
   } catch (err) {
@@ -171,6 +192,88 @@ router.get("/all", auth, async (req, res) => {
   const orders = await Order.find().sort({ createdAt: -1 });
   res.json(orders);
 });
+// GET CART
+router.get("/cart", auth, async (req, res) => {
+  const user = await User.findById(req.userId);
+  res.json(user.cart || []);
+});
+
+// ADD TO CART
+router.post("/cart", auth, async (req, res) => {
+  const user = await User.findById(req.userId);
+
+  const item = user.cart.find(
+    i => i.foodId.toString() === req.body.foodId
+  );
+
+  if (item) {
+    item.quantity += 1;
+  } else {
+    user.cart.push({ ...req.body, quantity: 1 });
+  }
+
+  await user.save();
+  res.json(user.cart);
+});
+
+// REMOVE FROM CART
+router.delete("/cart/:foodId", auth, async (req, res) => {
+  const user = await User.findById(req.userId);
+  user.cart = user.cart.filter(
+    i => i.foodId.toString() !== req.params.foodId
+  );
+  await user.save();
+  res.json(user.cart);
+});
+/* ================= INCREASE CART QTY ================= */
+router.put("/cart/increase/:foodId", auth, async (req, res) => {
+  try {
+    const user = await User.findById(req.userId);
+
+    const item = user.cart.find(
+      (i) => i.foodId.toString() === req.params.foodId
+    );
+
+    if (!item) {
+      return res.status(404).json("Item not found in cart");
+    }
+
+    item.quantity += 1;
+    await user.save();
+
+    res.json(user.cart);
+  } catch (err) {
+    console.error("INCREASE QTY ERROR:", err);
+    res.status(500).json("Failed to increase quantity");
+  }
+});
+
+/* ================= DECREASE CART QTY ================= */
+router.put("/cart/decrease/:foodId", auth, async (req, res) => {
+  try {
+    const user = await User.findById(req.userId);
+
+    const item = user.cart.find(
+      (i) => i.foodId.toString() === req.params.foodId
+    );
+
+    if (!item) {
+      return res.status(404).json("Item not found in cart");
+    }
+
+    if (item.quantity > 1) {
+      item.quantity -= 1;
+    }
+
+    await user.save();
+    res.json(user.cart);
+  } catch (err) {
+    console.error("DECREASE QTY ERROR:", err);
+    res.status(500).json("Failed to decrease quantity");
+  }
+});
+
+
 /* ================= ADMIN: INCOME + ORDER COUNT ================= */
 router.get("/income", auth, async (req, res) => {
   if (req.role !== "admin") {
@@ -216,6 +319,5 @@ router.get("/income", auth, async (req, res) => {
     year: await calculateStats(startOfYear),
   });
 });
-
 
 module.exports = router;

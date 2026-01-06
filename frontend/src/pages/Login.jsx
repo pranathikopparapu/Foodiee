@@ -6,13 +6,18 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState("");
 
   const navigate = useNavigate();
   const location = useLocation();
 
   const product = location.state?.product;
+  const message = location.state?.message;
 
-  const submit = async () => {
+  const handleSubmit = async (e) => {
+    e.preventDefault(); // ✅ VERY IMPORTANT
+    setError("");
+
     try {
       const res = await API.post("/users/login", { email, password });
 
@@ -20,21 +25,10 @@ export default function Login() {
       localStorage.setItem("name", res.data.name);
       localStorage.setItem("role", res.data.role);
 
-      // ✅ ALWAYS redirect to home (or admin)
-      if (res.data.role === "admin") {
-        navigate("/admin");
-      } else {
-        navigate("/");
-      }
+      // ✅ redirect after login
+      navigate(res.data.role === "admin" ? "/admin" : "/");
     } catch {
-      alert("Invalid credentials");
-    }
-  };
-
-  // ✅ ENTER KEY LOGIN
-  const handleKeyDown = (e) => {
-    if (e.key === "Enter") {
-      submit();
+      setError("❌ Invalid email or password");
     }
   };
 
@@ -42,7 +36,14 @@ export default function Login() {
     <div className="flex justify-center mt-16">
       <div className="w-96 border p-6 rounded shadow bg-white">
 
-        {/* ===== PRODUCT PREVIEW (MYNTRA STYLE) ===== */}
+        {/* LOGIN MESSAGE */}
+        {message && (
+          <div className="mb-3 text-sm text-red-500 text-center font-semibold">
+            {message}
+          </div>
+        )}
+
+        {/* PRODUCT PREVIEW */}
         {product && (
           <div className="flex gap-4 items-center mb-4 border-b pb-3">
             <img
@@ -57,58 +58,49 @@ export default function Login() {
           </div>
         )}
 
-        <h2 className="text-xl font-bold mb-5 text-center">Login</h2>
+        <h2 className="text-xl font-bold mb-4 text-center">Login</h2>
 
-        {/* ===== EMAIL ===== */}
-        <label className="block text-sm font-semibold mb-1">
-          Email ID
-        </label>
-        <input
-          className="border w-full p-2 mb-4 rounded"
-          placeholder="Enter your email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          onKeyDown={handleKeyDown}
-        />
+        {error && (
+          <div className="mb-3 bg-red-100 text-red-600 text-sm p-2 rounded text-center">
+            {error}
+          </div>
+        )}
 
-        {/* ===== PASSWORD ===== */}
-        <label className="block text-sm font-semibold mb-1">
-          Password
-        </label>
-
-        <div className="relative mb-2">
+        {/* ✅ FORM START */}
+        <form onSubmit={handleSubmit}>
+          <label className="block text-sm font-semibold mb-1">Email ID</label>
           <input
-            type={showPassword ? "text" : "password"}
-            className="border w-full p-2 pr-10 rounded"
-            placeholder="Enter your password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            onKeyDown={handleKeyDown}
+            className="border w-full p-2 mb-3 rounded"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
           />
 
-          {/* 👁 Eye Icon */}
-          <span
-            className="absolute right-3 top-2.5 cursor-pointer text-gray-500"
-            onClick={() => setShowPassword(!showPassword)}
-            title={showPassword ? "Hide password" : "Show password"}
+          <label className="block text-sm font-semibold mb-1">Password</label>
+          <div className="relative mb-4">
+            <input
+              type={showPassword ? "text" : "password"}
+              className="border w-full p-2 pr-10 rounded"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+            <span
+              className="absolute right-3 top-2.5 cursor-pointer"
+              onClick={() => setShowPassword(!showPassword)}
+            >
+              {showPassword ? "🙈" : "👁"}
+            </span>
+          </div>
+
+          <button
+            type="submit" // ✅ submit works with Enter
+            className="bg-red-500 text-white w-full py-2 rounded"
           >
-            {showPassword ? "🙈" : "👁"}
-          </span>
-        </div>
-
-        <Link
-          to="/forgot-password"
-          className="text-sm text-red-500 hover:underline block text-right mb-4"
-        >
-          Forgot Password?
-        </Link>
-
-        <button
-          onClick={submit}
-          className="bg-red-500 text-white w-full py-2 rounded hover:bg-red-600"
-        >
-          Login
-        </button>
+            Login
+          </button>
+        </form>
+        {/* ✅ FORM END */}
 
         <p className="text-sm text-center mt-4">
           Don’t have an account?{" "}

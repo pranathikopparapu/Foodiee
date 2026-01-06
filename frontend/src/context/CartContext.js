@@ -1,4 +1,5 @@
-import { createContext, useState } from "react";
+import { createContext, useState, useEffect } from "react";
+import API from "../services/api";
 
 export const CartContext = createContext();
 
@@ -6,47 +7,75 @@ export const CartProvider = ({ children }) => {
   const [cart, setCart] = useState([]);
   const [toastMsg, setToastMsg] = useState("");
 
-  /* ================= ADD TO CART ================= */
-  const addToCart = (food) => {
-  setCart(prev => {
-    const exists = prev.find(item => item.foodId === food.foodId);
-
-    if (exists) {
-      return prev.map(item =>
-        item.foodId === food.foodId
-          ? { ...item, quantity: item.quantity + 1 }
-          : item
-      );
+  /* ================= LOAD CART ================= */
+  const loadCart = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        setCart([]);
+        return;
+      }
+      const res = await API.get("/users/cart");
+      setCart(res.data || []);
+    } catch {
+      setCart([]);
     }
-
-    return [...prev, { ...food, quantity: 1 }];
-  });
-
-  setToastMsg("Added to cart");
-  setTimeout(() => setToastMsg(""), 1500);
-};
-
-
-
-  /* ================= REMOVE FROM CART ================= */
-  const removeFromCart = (id) => {
-    setCart(prev => prev.filter(item => item._id !== id));
-    setToastMsg("Item removed from cart");
-
-    setTimeout(() => setToastMsg(""), 2000);
   };
 
-  /* ================= CLEAR CART ================= */
-  const clearCart = () => setCart([]);
+  useEffect(() => {
+    loadCart();
+    window.addEventListener("storage", loadCart);
+    return () => window.removeEventListener("storage", loadCart);
+  }, []);
+
+  /* ================= ADD TO CART ================= */
+  const addToCart = async (food) => {
+    const token = localStorage.getItem("token");
+    if (!token) throw new Error("NOT_LOGGED_IN");
+
+    const res = await API.post("/users/cart", {
+      foodId: food.foodId.toString(),
+      name: food.name,
+      price: food.price,
+      image: food.image,
+    });
+
+    setCart(res.data);
+    setToastMsg("Added to cart 🛒");
+    setTimeout(() => setToastMsg(""), 1500);
+  };
+
+  /* ================= QTY ================= */
+  const increaseQty = async (foodId) => {
+    const res = await API.put(`/users/cart/increase/${foodId}`);
+    setCart(res.data);
+  };
+
+  const decreaseQty = async (foodId) => {
+    const res = await API.put(`/users/cart/decrease/${foodId}`);
+    setCart(res.data);
+  };
+
+  const removeFromCart = async (foodId) => {
+    const res = await API.delete(`/users/cart/${foodId}`);
+    setCart(res.data);
+  };
+
+  const clearCart = async () => {
+    await API.delete("/users/cart");
+    setCart([]);
+  };
 
   return (
     <CartContext.Provider
       value={{
         cart,
         addToCart,
+        increaseQty,
+        decreaseQty,
         removeFromCart,
         clearCart,
-        toastMsg
+        toastMsg,
       }}
     >
       {children}

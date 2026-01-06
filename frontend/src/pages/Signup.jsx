@@ -11,19 +11,31 @@ export default function Signup() {
   const navigate = useNavigate();
 
   const submit = async () => {
-    try {
-      await API.post("/users/register", { name, email, password });
-      navigate("/login");
-    } catch {
-      alert("Signup failed");
-    }
-  };
+  try {
+    const res = await API.post("/users/register", {
+      name,
+      email,
+      password,
+    });
 
-  // ✅ ENTER KEY SUPPORT
+    alert(res.data.message || "Signup successful");
+    navigate("/login");
+
+  } catch (err) {
+    console.log("SIGNUP ERROR FULL:", err.response);
+
+    const msg =
+      err.response?.data?.message ||
+      err.response?.data ||
+      "Signup failed";
+
+    alert(msg);
+  }
+};
+
+
   const handleKeyDown = (e) => {
-    if (e.key === "Enter") {
-      submit();
-    }
+    if (e.key === "Enter") submit();
   };
 
   return (
@@ -31,10 +43,7 @@ export default function Signup() {
       <div className="w-96 border p-6 rounded shadow bg-white">
         <h2 className="text-xl font-bold mb-5 text-center">Signup</h2>
 
-        {/* ===== NAME ===== */}
-        <label className="block text-sm font-semibold mb-1">
-          Full Name
-        </label>
+        <label className="block text-sm font-semibold mb-1">Full Name</label>
         <input
           className="border w-full p-2 mb-4 rounded"
           placeholder="Enter your name"
@@ -43,11 +52,9 @@ export default function Signup() {
           onKeyDown={handleKeyDown}
         />
 
-        {/* ===== EMAIL ===== */}
-        <label className="block text-sm font-semibold mb-1">
-          Email ID
-        </label>
+        <label className="block text-sm font-semibold mb-1">Email</label>
         <input
+          type="email"
           className="border w-full p-2 mb-4 rounded"
           placeholder="Enter your email"
           value={email}
@@ -55,26 +62,19 @@ export default function Signup() {
           onKeyDown={handleKeyDown}
         />
 
-        {/* ===== PASSWORD ===== */}
-        <label className="block text-sm font-semibold mb-1">
-          Password
-        </label>
-
+        <label className="block text-sm font-semibold mb-1">Password</label>
         <div className="relative mb-4">
           <input
             type={showPassword ? "text" : "password"}
             className="border w-full p-2 pr-10 rounded"
-            placeholder="Create a password"
+            placeholder="Create password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             onKeyDown={handleKeyDown}
           />
-
-          {/* 👁 Eye Icon */}
           <span
-            className="absolute right-3 top-2.5 cursor-pointer text-gray-500"
+            className="absolute right-3 top-2.5 cursor-pointer"
             onClick={() => setShowPassword(!showPassword)}
-            title={showPassword ? "Hide password" : "Show password"}
           >
             {showPassword ? "🙈" : "👁"}
           </span>

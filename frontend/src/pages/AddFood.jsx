@@ -18,12 +18,16 @@ export default function AddFood() {
   const submit = async () => {
     try {
       await API.post("/foods/add", {
-        ...food,
-        price: Number(food.price),
-        discount: Number(food.discount),
-      });
+  ...food,
+  price: Number(food.price),
+  discount: Number(food.discount),
+});
 
-      alert("Food Added Successfully ✅");
+// ✅ navigate to home with success message
+navigate("/", {
+  state: { message: "Food added successfully ✅" },
+});
+
 
       // reset form
       setFood({

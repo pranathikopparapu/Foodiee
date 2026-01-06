@@ -8,17 +8,34 @@ const addressSchema = new mongoose.Schema({
   pincode: String,
 });
 
+const wishlistSchema = new mongoose.Schema({
+  foodId: { type: mongoose.Schema.Types.ObjectId, ref: "Food" },
+  name: String,
+  price: Number,
+  image: String,
+  category: String,
+});
+
+
+const cartSchema = new mongoose.Schema({
+  foodId: { type: mongoose.Schema.Types.ObjectId, ref: "Food" },
+  name: String,
+  price: Number,
+  image: String,
+  quantity: Number,
+});
+
 const userSchema = new mongoose.Schema({
-  name: { type: String, required: true },
-  email: { type: String, required: true, unique: true },
-  password: { type: String, required: true },
+  name: String,
+  email: String,
+  password: String,
   role: { type: String, default: "user" },
 
-  // ✅ ADD THIS
+  cart: [cartSchema],          // ⭐ ADD THIS
+  wishlist: [wishlistSchema],  // already present
   savedAddresses: [addressSchema],
-
-  resetOTP: String,
-  otpExpiry: Date,
 });
+
+
 
 module.exports = mongoose.model("User", userSchema);

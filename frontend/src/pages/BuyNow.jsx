@@ -9,7 +9,7 @@ export default function BuyNow() {
   const { cart, clearCart } = useContext(CartContext);
   const { clearWishlist } = useContext(WishlistContext);
 
-  const [payment, setPayment] = useState("");
+  const [payment, setPayment] = useState("cod"); // ✅ DEFAULT COD
   const [mobileError, setMobileError] = useState("");
 
   const [addresses, setAddresses] = useState([]);
@@ -44,8 +44,7 @@ export default function BuyNow() {
   }
 
   const totalAmount = cart.reduce(
-    (sum, item) =>
-      sum + (item.finalPrice || item.price) * item.quantity,
+    (sum, item) => sum + item.price * (item.quantity || 1),
     0
   );
 
@@ -73,26 +72,25 @@ export default function BuyNow() {
     }
 
     try {
-     await API.post("/orders/create", {
-  products: cart.map(item => ({
-    foodId: item.foodId,          // ⭐ VERY IMPORTANT
-    name: item.name,
-    price: item.finalPrice || item.price,
-    quantity: item.quantity,
-    image: item.image,
-  })),
-  address,
-  paymentMethod: payment,
-  totalAmount,
-});
-
-
-
+      await API.post("/orders/create", {
+        products: cart.map(item => ({
+          foodId: item.foodId,
+          name: item.name,
+          price: item.price,
+          quantity: item.quantity || 1,
+          image: item.image,
+        })),
+        address,
+        paymentMethod: "cod", // ✅ ONLY COD
+        totalAmount,
+      });
 
       clearCart();
       clearWishlist();
       navigate("/order-success");
-    } catch {
+
+    } catch (err) {
+      console.error("ORDER ERROR:", err.response?.data || err.message);
       alert("Order failed. Try again");
     }
   };
@@ -105,7 +103,7 @@ export default function BuyNow() {
         {/* ================= LEFT: CART ================= */}
         <div className="border p-4 rounded">
           {cart.map(item => (
-            <div key={item._id} className="flex gap-4 mb-4 border-b pb-4">
+            <div key={item.foodId} className="flex gap-4 mb-4 border-b pb-4">
               <img
                 src={item.image}
                 alt={item.name}
@@ -115,7 +113,7 @@ export default function BuyNow() {
                 <h3 className="font-bold">{item.name}</h3>
                 <p>Qty: {item.quantity}</p>
                 <p className="font-semibold">
-                  ₹{(item.finalPrice || item.price) * item.quantity}
+                  ₹{item.price * item.quantity}
                 </p>
               </div>
             </div>
@@ -123,11 +121,10 @@ export default function BuyNow() {
           <p className="text-xl font-bold mt-4">Total: ₹{totalAmount}</p>
         </div>
 
-        {/* ================= RIGHT: ADDRESS + PAYMENT ================= */}
+        {/* ================= RIGHT: ADDRESS ================= */}
         <div>
           <h3 className="font-semibold mb-3">Select Delivery Address</h3>
 
-          {/* SAVED ADDRESSES */}
           {addresses.map((addr, index) => (
             <div
               key={index}
@@ -165,37 +162,17 @@ export default function BuyNow() {
             <p className="text-red-500 text-sm">{mobileError}</p>
           )}
 
-          {/* PAYMENT */}
-          <h3 className="font-semibold mt-4 mb-2">Payment Method</h3>
+          {/* ✅ COD ONLY */}
+          <p className="font-semibold mt-4 mb-2">
+            Payment Method: <span className="text-green-600">Cash on Delivery</span>
+          </p>
 
-          <div className="flex gap-3 mb-4">
-            <button
-              onClick={() => setPayment("upi")}
-              className={`px-4 py-1 rounded ${
-                payment === "upi" ? "bg-green-500 text-white" : "border"
-              }`}
-            >
-              UPI
-            </button>
-
-            <button
-              onClick={() => setPayment("cod")}
-              className={`px-4 py-1 rounded ${
-                payment === "cod" ? "bg-green-500 text-white" : "border"
-              }`}
-            >
-              COD
-            </button>
-          </div>
-
-          {payment && (
-            <button
-              onClick={placeOrder}
-              className="bg-green-500 text-white w-full py-3 rounded"
-            >
-              Place Order
-            </button>
-          )}
+          <button
+            onClick={placeOrder}
+            className="bg-green-500 text-white w-full py-3 rounded"
+          >
+            Place Order
+          </button>
         </div>
       </div>
     </div>

@@ -1,38 +1,31 @@
 import { createContext, useState } from "react";
+import API from "../services/api";
 
 export const WishlistContext = createContext();
 
 export function WishlistProvider({ children }) {
   const [wishlist, setWishlist] = useState([]);
 
-  const addToWishlist = (product) => {
-    const exists = wishlist.find(item => item._id === product._id);
-    if (!exists) {
-      setWishlist([...wishlist, product]);
-    }
+  const addToWishlist = async (product) => {
+  const res = await API.post("/users/wishlist", product);
+  setWishlist(res.data);
+};
+
+
+  const removeFromWishlist = async (foodId) => {
+  const res = await API.delete(`/users/wishlist/${foodId}`);
+  setWishlist(res.data);
+};
+
+  const isWishlisted = (foodId) => {
+    return wishlist.some(item => item.foodId === foodId);
   };
 
-  const removeFromWishlist = (id) => {
-    setWishlist(wishlist.filter(item => item._id !== id));
-  };
-
-  const clearWishlist = () => {
-    setWishlist([]);
-  };
-
-  const isWishlisted = (id) => {
-    return wishlist.some(item => item._id === id);
-  };
+  const clearWishlist = () => setWishlist([]);
 
   return (
     <WishlistContext.Provider
-      value={{
-        wishlist,
-        addToWishlist,
-        removeFromWishlist,
-        clearWishlist,
-        isWishlisted,
-      }}
+      value={{ wishlist, addToWishlist, removeFromWishlist, isWishlisted, clearWishlist }}
     >
       {children}
     </WishlistContext.Provider>

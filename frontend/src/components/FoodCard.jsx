@@ -12,66 +12,74 @@ export default function FoodCard({ food, onEdit }) {
   const token = localStorage.getItem("token");
   const role = localStorage.getItem("role");
 
-  // 🔽 REVIEW TOGGLE
   const [showAllReviews, setShowAllReviews] = useState(false);
 
-  const handleAddToCart = () =>
-    addToCart({
-      foodId: food._id,
-      name: food.name,
-      price: food.finalPrice || food.price,
-      image: food.image,
-    });
+  const foodId = food._id;
+  const wishlisted = isWishlisted(foodId);
 
-  const wishlisted = isWishlisted(food._id);
-
-  const handleWishlist = () => {
-    wishlisted
-      ? removeFromWishlist(food._id)
-      : addToWishlist(food);
+  const handleAddToCart = async () => {
+    try {
+      await addToCart({
+        foodId,
+        name: food.name,
+        price: food.finalPrice || food.price,
+        image: food.image,
+      });
+    } catch {
+      navigate("/login");
+    }
   };
 
-  const renderStars = (rating = 0) => {
-    return [...Array(5)].map((_, i) => (
-      <span key={i}>
-        {i + 1 <= Math.round(rating) ? "⭐" : "☆"}
-      </span>
-    ));
+  const handleWishlist = async () => {
+    try {
+      if (wishlisted) {
+        await removeFromWishlist(foodId);
+      } else {
+        await addToWishlist({
+          foodId,
+          name: food.name,
+          price: food.finalPrice || food.price,
+          image: food.image,
+          category: food.category,
+        });
+      }
+    } catch {
+      navigate("/login");
+    }
   };
 
   return (
     <div className="border p-4 rounded shadow hover:shadow-lg transition">
-      <img
-        src={food.image}
-        alt={food.name}
-        className="w-full h-40 object-cover rounded mb-3"
-      />
+      <img src={food.image} alt={food.name} className="w-full h-40 rounded mb-3" />
 
-      <h3 className="font-bold text-lg">{food.name}</h3>
-      <p className="text-gray-500 text-sm">{food.category}</p>
+      <h3 className="font-bold">{food.name}</h3>
+      <p className="text-gray-500">{food.category}</p>
+
+      <p className="font-bold mt-2">₹{food.finalPrice || food.price}</p>
 
       {/* ⭐ RATING */}
-      <div className="flex items-center gap-2 mt-1 text-sm">
-        <div className="text-yellow-500">
-          {food.avgRating > 0 ? renderStars(food.avgRating) : "No ratings"}
-        </div>
-        {food.avgRating > 0 && (
-          <span className="text-gray-600">
-            {food.avgRating.toFixed(1)} ({food.reviews?.length || 0})
-          </span>
-        )}
+      <div className="flex items-center gap-2 mt-1">
+        <span className="text-yellow-500 font-bold">
+          ⭐ {food.avgRating || 0}
+        </span>
+        <span className="text-sm text-gray-500">
+          ({food.reviews?.length || 0} reviews)
+        </span>
       </div>
 
-      {/* 💬 REVIEWS SECTION */}
-      {food.reviews && food.reviews.length > 0 && (
+      {/* 📝 REVIEWS */}
+      {food.reviews?.length > 0 && (
         <div className="mt-2 text-sm text-gray-700">
-          {/* SHOW ONLY ONE REVIEW */}
-          <p>
-            <strong>{food.reviews[0].userName}:</strong>{" "}
-            {food.reviews[0].comment}
-          </p>
+          {!showAllReviews ? (
+            <p className="italic">
+              “{food.reviews[0].comment || "No comment"}”
+            </p>
+          ) : (
+            food.reviews.map((r, i) => (
+              <p key={i}>⭐ {r.rating} – {r.comment || "No comment"}</p>
+            ))
+          )}
 
-          {/* VIEW ALL BUTTON */}
           {food.reviews.length > 1 && (
             <button
               onClick={() => setShowAllReviews(!showAllReviews)}
@@ -80,57 +88,32 @@ export default function FoodCard({ food, onEdit }) {
               {showAllReviews ? "Hide reviews" : "View all reviews"}
             </button>
           )}
-
-          {/* DROPDOWN ALL REVIEWS */}
-          {showAllReviews && (
-            <div className="mt-2 space-y-1">
-              {food.reviews.slice(1).map((r, i) => (
-                <p key={i}>
-                  <strong>{r.userName}:</strong> {r.comment}
-                </p>
-              ))}
-            </div>
-          )}
         </div>
       )}
 
-      <p className="font-bold text-lg mt-2">
-        ₹{food.finalPrice || food.price}
-      </p>
-
-      {/* ===== BUTTONS ===== */}
-      <div className="flex gap-2 mt-3 flex-wrap">
+      {/* ACTIONS */}
+      <div className="flex gap-2 mt-3">
         {token && role === "user" && (
           <>
             <button
               onClick={handleAddToCart}
-              className="bg-green-500 text-white text-sm px-3 py-1 rounded"
+              className="bg-green-500 text-white px-3 py-1 rounded"
             >
               Add to Cart
             </button>
-
             <button
               onClick={handleWishlist}
-              className="border text-sm px-3 py-1 rounded"
+              className="border px-3 py-1 rounded"
             >
               {wishlisted ? "❤️" : "🤍"}
             </button>
           </>
         )}
 
-        {!token && (
-          <button
-            onClick={() => navigate("/login")}
-            className="bg-red-500 text-white text-sm px-3 py-1 rounded"
-          >
-            Buy Now
-          </button>
-        )}
-
         {role === "admin" && onEdit && (
           <button
             onClick={() => onEdit(food)}
-            className="bg-blue-500 text-white text-sm px-3 py-1 rounded"
+            className="bg-blue-500 text-white px-3 py-1 rounded"
           >
             Edit
           </button>

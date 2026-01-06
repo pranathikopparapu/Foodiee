@@ -88,17 +88,19 @@ router.delete("/:id", auth, adminOnly, async (req, res) => {
 router.post("/:id/review", auth, async (req, res) => {
   try {
     const { rating, comment } = req.body;
-    const foodId = req.params.id;
+   const foodId = req.params.id.toString();
 
-    const food = await Food.findById(foodId);
+const food = await Food.findById(foodId);
+
     if (!food) return res.status(404).json("Food not found");
 
     /* ✅ CHECK: USER ORDERED THIS FOOD AND IT IS DELIVERED */
     const order = await Order.findOne({
-      userId: req.userId,
-      status: "Delivered",
-      "products.foodId": foodId,
-    });
+  userId: req.userId,
+  status: "Delivered",
+  "products.foodId": food._id,
+});
+
 
     if (!order) {
       return res.status(403).json("Only delivered buyers can review");
@@ -110,7 +112,8 @@ router.post("/:id/review", auth, async (req, res) => {
     );
 
     if (alreadyReviewed) {
-      return res.status(400).json("You already reviewed this product");
+      return res.status(400).json({ message: "You already reviewed this product" });
+
     }
 
     /* ⭐ ADD REVIEW */
@@ -124,6 +127,15 @@ router.post("/:id/review", auth, async (req, res) => {
     /* ⭐ AUTO CALCULATE AVG RATING */
     food.calculateAvgRating();
     await food.save();
+await Order.updateMany(
+  {
+    userId: req.userId,
+    "products.foodId": food._id,
+  },
+  {
+    $set: { "products.$.reviewed": true },
+  }
+);
 
     res.json({
       avgRating: food.avgRating,
