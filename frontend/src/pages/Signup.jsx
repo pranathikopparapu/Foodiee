@@ -8,31 +8,42 @@ export default function Signup() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
+  const [successMsg, setSuccessMsg] = useState("");
+  const [errorMsg, setErrorMsg] = useState("");
+
   const navigate = useNavigate();
 
   const submit = async () => {
-  try {
-    const res = await API.post("/users/register", {
-      name,
-      email,
-      password,
-    });
+    setErrorMsg("");
+    setSuccessMsg("");
 
-    alert(res.data.message || "Signup successful");
-    navigate("/login");
+    try {
+      const res = await API.post("/users/register", {
+        name,
+        email,
+        password,
+      });
 
-  } catch (err) {
-    console.log("SIGNUP ERROR FULL:", err.response);
+      setSuccessMsg(res.data.message || "Signup successful ✅");
 
-    const msg =
-      err.response?.data?.message ||
-      err.response?.data ||
-      "Signup failed";
+      // redirect after small delay
+      setTimeout(() => {
+        navigate("/login", {
+          state: { message: "Signup successful. Please login 👋" },
+        });
+      }, 1500);
 
-    alert(msg);
-  }
-};
+    } catch (err) {
+      console.log("SIGNUP ERROR FULL:", err.response);
 
+      const msg =
+        err.response?.data?.message ||
+        err.response?.data ||
+        "Signup failed ❌";
+
+      setErrorMsg(msg);
+    }
+  };
 
   const handleKeyDown = (e) => {
     if (e.key === "Enter") submit();
@@ -41,7 +52,22 @@ export default function Signup() {
   return (
     <div className="flex justify-center mt-20">
       <div className="w-96 border p-6 rounded shadow bg-white">
-        <h2 className="text-xl font-bold mb-5 text-center">Signup</h2>
+
+        <h2 className="text-xl font-bold mb-4 text-center">Signup</h2>
+
+        {/* ✅ SUCCESS MESSAGE */}
+        {successMsg && (
+          <div className="mb-3 bg-green-100 text-green-700 text-sm p-2 rounded text-center">
+            {successMsg}
+          </div>
+        )}
+
+        {/* ❌ ERROR MESSAGE */}
+        {errorMsg && (
+          <div className="mb-3 bg-red-100 text-red-600 text-sm p-2 rounded text-center">
+            {errorMsg}
+          </div>
+        )}
 
         <label className="block text-sm font-semibold mb-1">Full Name</label>
         <input
