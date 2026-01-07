@@ -77,38 +77,6 @@ Backend: Render
 
 Database: MongoDB Atlas
 
-📂 Project Structure
-Foodiee/
-│
-├── frontend/
-│   ├── src/
-│   │   ├── components/
-│   │   ├── pages/
-│   │   ├── context/
-│   │   ├── services/api.js
-│   │   └── App.js
-│   └── package.json
-│
-├── backend/
-│   ├── routes/
-│   ├── models/
-│   ├── config/db.js
-│   ├── server.js
-│   └── package.json
-│
-└── README.md
-
-⚙️ Environment Variables
-Backend (.env)
-PORT=5000
-MONGO_URI=your_mongodb_connection_string
-JWT_SECRET=your_secret_key
-EMAIL_USER=your_email
-EMAIL_PASS=your_email_password
-
-
-⚠️ Note: .env and node_modules are excluded using .gitignore.
-
 ▶️ Running Locally
 1️⃣ Clone Repository
 git clone https://github.com/pranathikopparapu/Foodiee.git
