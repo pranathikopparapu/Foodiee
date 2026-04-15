@@ -12,7 +12,7 @@ export default function Home() {
   /* ================= FETCH FOODS ================= */
   const fetchFoods = async () => {
     try {
-      const res = await API.get("/api/foods");
+      const res = await API.get("/foods");
 
       console.log("API DATA:", res.data); // 🔥 debug
 
