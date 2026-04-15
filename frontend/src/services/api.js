@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const API = axios.create({
-  baseURL: "https://foodiee-mfjc.onrender.com",
+  baseURL: "https://foodiee-mfjc.onrender.com/api/foods",
 });
 
 API.interceptors.request.use((req) => {
