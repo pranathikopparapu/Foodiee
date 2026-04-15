@@ -126,11 +126,3 @@ GET /api/foods
 
 Returns list of all food items.
 
----
-
-
----
-
-
----
-
