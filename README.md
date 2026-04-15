@@ -128,18 +128,9 @@ Returns list of all food items.
 
 ---
 
-## 📸 Screenshots
-
-(Add your project screenshots here)
 
 ---
 
-## 👩‍💻 Author
-
-Pranathi Kopparapu
 
 ---
 
-## ⭐ Support
-
-If you like this project, give it a ⭐ on GitHub!
