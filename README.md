@@ -1,9 +1,7 @@
 # 🍔 Foodiee – Online Food Ordering System
 
-## 🚀 Live Demo
+## 🚀 Live Demo:https://foodapp-eq89bq6lt-pranathikopparapus-projects.vercel.app/
 
-🌐 Frontend: https://foodapp-eq89bq6lt-pranathikopparapus-projects.vercel.app/
-⚙️ Backend: https://foodiee-mfjc.onrender.com
 
 ---
 
