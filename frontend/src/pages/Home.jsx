@@ -13,9 +13,20 @@ export default function Home() {
   const fetchFoods = async () => {
     try {
       const res = await API.get("/foods");
-      setFoods(res.data);
+
+      console.log("API DATA:", res.data); // 🔥 debug
+
+      // ✅ handle both cases (array or object)
+      if (Array.isArray(res.data)) {
+        setFoods(res.data);
+      } else if (res.data.foods) {
+        setFoods(res.data.foods);
+      } else {
+        setFoods([]);
+      }
+
     } catch (err) {
-      console.error("Failed to load foods");
+      console.error("ERROR:", err); // 🔥 show actual error
     }
   };
 
@@ -23,7 +34,6 @@ export default function Home() {
   useEffect(() => {
     fetchFoods();
 
-    // ✅ redirect admin ONLY once
     if (role === "admin") {
       navigate("/admin", { replace: true });
     }
@@ -31,8 +41,9 @@ export default function Home() {
 
   /* ================= GROUP BY CATEGORY ================= */
   const groupedFoods = foods.reduce((acc, food) => {
-    acc[food.category] = acc[food.category] || [];
-    acc[food.category].push(food);
+    const category = food.category || "Others"; // ✅ safe fallback
+    acc[category] = acc[category] || [];
+    acc[category].push(food);
     return acc;
   }, {});
 
@@ -53,7 +64,7 @@ export default function Home() {
               <FoodCard
                 key={food._id}
                 food={food}
-                refreshFoods={fetchFoods} // ⭐ refresh after review
+                refreshFoods={fetchFoods}
               />
             ))}
           </div>
